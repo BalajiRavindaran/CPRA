@@ -1,8 +1,4 @@
-Here’s a comprehensive **README.md** file for your project. It includes a detailed project description, setup instructions, API documentation, and Postman testing details.
-
----
-
-# **Crypto Risk Assessment Backend**
+# **CounterParty Risk Assesment with WalletRank**
 
 This is the backend implementation of a cryptocurrency risk assessment system. It simulates wallet creation, transactions, and calculates the risk score of wallets using a **WalletRank algorithm** inspired by PageRank. The backend is built using **Node.js**, **Express.js**, and **MongoDB Atlas**.
 
@@ -244,7 +240,7 @@ We welcome contributions! To contribute:
 
 ## **License**
 
-This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the **Apache License 2.0**. See the [LICENSE](LICENSE) file for details.
 
 ---
 
