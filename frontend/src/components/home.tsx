@@ -40,7 +40,7 @@ const Home = () => {
 
   // Initialize with some default data
   useEffect(() => {
-    const defaultWallets = [
+    const defaultWallets: Wallet[] = [
       {
         id: "0x8f7d...e5a2",
         position: [20, 10, 0],

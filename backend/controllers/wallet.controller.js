@@ -1,42 +1,30 @@
 const Wallet = require('../models/wallet.model');
-const { calculateWalletRank } = require('../utils/walletRank.utils');
-const faker = require('faker');
 const { v4: uuidv4 } = require('uuid');
 
-// Create a new wallet
-exports.createWallet = async (req, res) => {
-    try {
-        const balance = req.body.balance || 0;
-        const location = `${faker.address.latitude()}, ${faker.address.longitude()}`;
-        const newWallet = new Wallet({
-            id: uuidv4(),
-            balance,
-            location
-        });
-        await newWallet.save();
-        res.status(201).json({ message: 'Wallet created', wallet_id: newWallet.id });
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
-};
+exports.createWallets = async (req, res) => {
+  try {
+    const { walletCount, riskyWalletCount } = req.body;
 
-// Get wallet details
-exports.getWallet = async (req, res) => {
-    try {
-        const wallet = await Wallet.findOne({ id: req.params.id });
-        if (!wallet) return res.status(404).json({ error: 'Wallet not found' });
-        res.status(200).json(wallet);
-    } catch (error) {
-        res.status(400).json({ error: error.message });
+    // Generate low-risk wallets
+    for (let i = 0; i < walletCount - riskyWalletCount; i++) {
+      await Wallet.create({
+        id: uuidv4(),
+        balance: 100,
+        risk_score: Math.random() * 0.3
+      });
     }
-};
 
-// List all wallets
-exports.listWallets = async (req, res) => {
-    try {
-        const wallets = await Wallet.find({});
-        res.status(200).json(wallets);
-    } catch (error) {
-        res.status(400).json({ error: error.message });
+    // Generate high-risk wallets
+    for (let i = 0; i < riskyWalletCount; i++) {
+      await Wallet.create({
+        id: uuidv4(),
+        balance: 100,
+        risk_score: 0.7 + Math.random() * 0.3
+      });
     }
+
+    res.status(201).json({ message: 'Wallets created successfully' });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
 };
