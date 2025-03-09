@@ -27,6 +27,14 @@ async function calculateWalletRank({
     let newScores = {};
 
     for (const wallet of wallets) {
+
+      //skip wallets wits risk score > 0.7 which are high risk wallets
+      if (riskScores[wallet.id] > 0.7) {
+        newScores[wallet.id] = riskScores[wallet.id];  // Keep existing high risk score
+        console.log(`Skipping high-risk Wallet ${wallet.id} (risk: ${riskScores[wallet.id]})`);
+        continue;
+      }
+
       let incomingRisk = 0;
       const incomingTransactions = await Transaction.find({
         receiver_id: wallet.id,
