@@ -30,6 +30,9 @@ interface GlobeVisualizationProps {
   wallets?: Wallet[];
   transactions?: Transaction[];
   isSimulating?: boolean;
+  onWalletSelect?: (wallet: Wallet | null) => void;
+  selectedWalletId?: string;
+  connectedWalletIds?: string[];
 }
 
 const GlobeVisualization = ({
@@ -96,6 +99,9 @@ const GlobeVisualization = ({
     },
   ],
   isSimulating = true,
+  onWalletSelect = () => {},
+  selectedWalletId,
+  connectedWalletIds = [],
 }: GlobeVisualizationProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -106,12 +112,23 @@ const GlobeVisualization = ({
   const frameIdRef = useRef<number | null>(null);
   const [zoom, setZoom] = useState(1);
   const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(null);
+  const [localConnectedWallets, setLocalConnectedWallets] = useState<string[]>(
+    [],
+  );
   const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 });
   const [activeTransactions, setActiveTransactions] = useState<Transaction[]>(
     [],
   );
   const raycaster = useRef(new THREE.Raycaster());
   const mouse = useRef(new THREE.Vector2());
+
+  // Use the props for selection state if provided
+  const effectiveSelectedWallet = selectedWalletId
+    ? wallets.find((w) => w.id === selectedWalletId) || null
+    : selectedWallet;
+  const effectiveConnectedWallets = selectedWalletId
+    ? connectedWalletIds
+    : localConnectedWallets;
 
   // Initialize Three.js scene
   useEffect(() => {
@@ -215,6 +232,22 @@ const GlobeVisualization = ({
           }
         });
 
+        // Animate selected wallet pulsing effect
+        nodesRef.current.forEach((node) => {
+          if (node.userData && node.userData.originalScale) {
+            // This is a selected wallet with animation data
+            const time = now * 0.001; // Convert to seconds
+            const phase = node.userData.animationPhase || 0;
+
+            // Pulsing scale animation
+            const scale = 1 + 0.1 * Math.sin(time * 2 + phase);
+            node.scale.set(scale, scale, scale);
+
+            // Rotate slightly for sparkle effect
+            node.rotation.y = time * 0.5;
+          }
+        });
+
         rendererRef.current.render(sceneRef.current, cameraRef.current);
       }
     };
@@ -247,6 +280,16 @@ const GlobeVisualization = ({
 
         if (walletData) {
           setSelectedWallet(walletData);
+          onWalletSelect(walletData);
+
+          // Find connected wallets based on transactions
+          const connected = transactions
+            .filter(
+              (t) => t.source === walletData.id || t.target === walletData.id,
+            )
+            .map((t) => (t.source === walletData.id ? t.target : t.source));
+
+          setLocalConnectedWallets([...new Set(connected)]);
 
           // Calculate screen position for popup
           const vector = new THREE.Vector3();
@@ -262,6 +305,11 @@ const GlobeVisualization = ({
 
           setPopupPosition({ x, y });
         }
+      } else {
+        // Clicked on empty space, clear selection
+        setSelectedWallet(null);
+        setLocalConnectedWallets([]);
+        onWalletSelect(null);
       }
     };
 
@@ -355,14 +403,36 @@ const GlobeVisualization = ({
 
     // Create nodes for wallets
     distributedWallets.forEach((wallet) => {
-      const geometry = new THREE.SphereGeometry(
-        wallet.riskScore >= 75 ? 3 : wallet.riskScore >= 50 ? 2 : 1.5,
-      );
+      // Only apply selection effects if we have a selected wallet
+      const hasSelection =
+        selectedWalletId !== undefined && selectedWalletId !== null;
+      const isSelected = hasSelection && selectedWalletId === wallet.id;
+      const isConnected =
+        hasSelection && connectedWalletIds.includes(wallet.id);
+      const isDimmed = hasSelection && !isSelected && !isConnected;
+
+      // Adjust size based on risk and selection status
+      const baseSize =
+        wallet.riskScore >= 75 ? 3 : wallet.riskScore >= 50 ? 2 : 1.5;
+      const size = isSelected
+        ? baseSize * 1.5
+        : isConnected
+          ? baseSize * 1.2
+          : baseSize;
+
+      const geometry = new THREE.SphereGeometry(size);
+
+      // Create glow effect for selected and connected wallets
       const material = new THREE.MeshStandardMaterial({
         color: wallet.color,
         emissive: wallet.color,
-        emissiveIntensity: 0.3,
+        emissiveIntensity: isSelected ? 1.5 : isConnected ? 1.0 : 0.3,
+        opacity: isDimmed ? 0.3 : 1,
+        transparent: isDimmed,
+        metalness: isSelected ? 0.8 : isConnected ? 0.5 : 0.2,
+        roughness: isSelected ? 0.2 : isConnected ? 0.4 : 0.7,
       });
+
       const sphere = new THREE.Mesh(geometry, material);
 
       // Position in 3D space using the distributed positions
@@ -375,8 +445,44 @@ const GlobeVisualization = ({
       // Store wallet data for raycasting
       sphere.userData = wallet;
 
+      // Add pulsing animation for selected wallet
+      if (isSelected) {
+        // Store original scale for animation
+        sphere.userData.originalScale = { x: 1, y: 1, z: 1 };
+        sphere.userData.animationPhase = Math.random() * Math.PI * 2; // Random starting phase
+      }
+
       sceneRef.current?.add(sphere);
       nodesRef.current.push(sphere);
+
+      // Add glow effect for selected wallet
+      if (isSelected) {
+        const glowGeometry = new THREE.SphereGeometry(size * 1.3);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+          color: wallet.color,
+          transparent: true,
+          opacity: 0.15,
+        });
+        const glowSphere = new THREE.Mesh(glowGeometry, glowMaterial);
+        glowSphere.position.copy(sphere.position);
+        sceneRef.current?.add(glowSphere);
+        nodesRef.current.push(glowSphere);
+
+        // Add second larger glow for more effect
+        const outerGlowGeometry = new THREE.SphereGeometry(size * 1.8);
+        const outerGlowMaterial = new THREE.MeshBasicMaterial({
+          color: wallet.color,
+          transparent: true,
+          opacity: 0.05,
+        });
+        const outerGlowSphere = new THREE.Mesh(
+          outerGlowGeometry,
+          outerGlowMaterial,
+        );
+        outerGlowSphere.position.copy(sphere.position);
+        sceneRef.current?.add(outerGlowSphere);
+        nodesRef.current.push(outerGlowSphere);
+      }
     });
 
     // Create links for transactions
@@ -476,7 +582,13 @@ const GlobeVisualization = ({
       cameraRef.current.position.x = 0;
       cameraRef.current.position.y = 0;
     }
-  }, [wallets, transactions, zoom]);
+  }, [
+    wallets,
+    transactions,
+    zoom,
+    effectiveSelectedWallet,
+    effectiveConnectedWallets,
+  ]);
 
   // Handle zoom controls
   const handleZoomIn = () => {
@@ -495,9 +607,11 @@ const GlobeVisualization = ({
     }
   }, [zoom]);
 
-  // Close wallet detail popup
+  // Close wallet detail popup and reset all highlighting
   const handleClosePopup = () => {
     setSelectedWallet(null);
+    setLocalConnectedWallets([]);
+    onWalletSelect(null);
   };
 
   return (
@@ -553,15 +667,7 @@ const GlobeVisualization = ({
         </div>
       </div>
 
-      {/* Wallet detail popup */}
-      {selectedWallet && (
-        <WalletDetailPopup
-          walletId={selectedWallet.id}
-          currentRiskScore={selectedWallet.riskScore}
-          position={popupPosition}
-          onClose={handleClosePopup}
-        />
-      )}
+      {/* Wallet detail popup is now handled by the parent component */}
     </div>
   );
 };

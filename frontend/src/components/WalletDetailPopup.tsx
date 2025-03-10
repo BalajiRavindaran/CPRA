@@ -73,6 +73,7 @@ const WalletDetailPopup = ({
   isOpen = true,
 }: WalletDetailPopupProps) => {
   const [isVisible, setIsVisible] = useState(isOpen);
+  const [connectedWallets, setConnectedWallets] = useState<string[]>([]);
 
   const handleClose = () => {
     setIsVisible(false);
@@ -98,12 +99,82 @@ const WalletDetailPopup = ({
     }
   };
 
+  // If it's a side panel, don't use fixed positioning
+  if (isOpen && !position) {
+    return (
+      <div className="w-full h-full bg-background overflow-auto p-6">
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-2">Wallet Information</h3>
+          <div className="p-4 border border-border rounded-lg bg-muted/30 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium">Wallet ID</span>
+              <span className="text-sm font-mono bg-background px-2 py-1 rounded">
+                {walletId}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Current Risk Score</span>
+              <Badge className={`${getRiskColor(currentRiskScore)} text-white`}>
+                {currentRiskScore}/100
+              </Badge>
+            </div>
+            <div className="w-full bg-background rounded-full h-2.5 mt-2">
+              <div
+                className={`${getRiskColor(currentRiskScore)} h-2.5 rounded-full`}
+                style={{ width: `${currentRiskScore}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Risk History</h3>
+          <p className="text-sm text-muted-foreground mb-3">
+            Historical changes to this wallet's risk score based on
+            transactions.
+          </p>
+          <div className="max-h-[300px] overflow-y-auto pr-1 border border-border rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[100px]">Date</TableHead>
+                  <TableHead>Score</TableHead>
+                  <TableHead>Change</TableHead>
+                  <TableHead className="text-right">Transaction</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {riskHistory.map((item, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="text-xs">{item.date}</TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`${getRiskColor(item.score)} text-white text-xs`}
+                      >
+                        {item.score}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{getChangeIcon(item.change)}</TableCell>
+                    <TableCell className="text-right text-xs font-mono">
+                      {item.transaction}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // For the popup version with position
   return (
     <div
       className="fixed z-50 bg-background border rounded-lg shadow-lg w-[90vw] md:w-[400px] max-h-[350px] overflow-hidden"
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
+        left: `${position?.x || 0}px`,
+        top: `${position?.y || 0}px`,
         transform: "translate(-50%, -50%)",
         maxWidth: "calc(100vw - 20px)",
       }}

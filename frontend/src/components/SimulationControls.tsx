@@ -10,7 +10,14 @@ import {
   Play,
   Settings,
   ArrowRight,
+  Info,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 import WalletDetailPopup from "./WalletDetailPopup";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -36,6 +43,7 @@ const SimulationControls = ({
   const [dampingFactor, setDampingFactor] = useState(0.85);
   const [iterations, setIterations] = useState(20);
   const [riskThreshold, setRiskThreshold] = useState(75);
+  const [allowRiskDecay, setAllowRiskDecay] = useState(false);
   const [transactionWeight, setTransactionWeight] = useState(0.5);
 
   // Multi-step form state
@@ -151,7 +159,24 @@ const SimulationControls = ({
                     <div className="space-y-4">
                       <div>
                         <div className="flex justify-between mb-2">
-                          <Label htmlFor="walletCount">Number of Wallets</Label>
+                          <div className="flex items-center gap-1">
+                            <Label htmlFor="walletCount">
+                              Number of Wallets
+                            </Label>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="w-[200px] text-xs">
+                                    Total number of cryptocurrency wallets to
+                                    simulate in the network
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
                           <span className="text-sm font-medium">
                             {walletCount}
                           </span>
@@ -180,9 +205,24 @@ const SimulationControls = ({
 
                       <div>
                         <div className="flex justify-between mb-2">
-                          <Label htmlFor="riskyWalletCount">
-                            Risky Wallets
-                          </Label>
+                          <div className="flex items-center gap-1">
+                            <Label htmlFor="riskyWalletCount">
+                              Risky Wallets
+                            </Label>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="w-[200px] text-xs">
+                                    Number of wallets with high initial risk
+                                    scores (75-100)
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
                           <span className="text-sm font-medium">
                             {riskyWalletCount}
                           </span>
@@ -209,6 +249,37 @@ const SimulationControls = ({
                           max={Math.min(100, walletCount)}
                           className="mt-2"
                         />
+                      </div>
+
+                      <div className="flex items-center space-x-2 mt-4">
+                        <input
+                          type="checkbox"
+                          id="allowRiskDecay"
+                          checked={allowRiskDecay}
+                          onChange={(e) => setAllowRiskDecay(e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <div className="flex items-center gap-1">
+                          <Label
+                            htmlFor="allowRiskDecay"
+                            className="text-sm font-medium"
+                          >
+                            Allow Risk Decay
+                          </Label>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="w-[200px] text-xs">
+                                  When enabled, risk scores can decrease over
+                                  time if no new risky transactions occur
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -276,9 +347,24 @@ const SimulationControls = ({
                   <CardContent className="space-y-6">
                     <div>
                       <div className="flex justify-between mb-2">
-                        <Label htmlFor="transactionCount">
-                          Number of Transactions
-                        </Label>
+                        <div className="flex items-center gap-1">
+                          <Label htmlFor="transactionCount">
+                            Number of Transactions
+                          </Label>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="w-[200px] text-xs">
+                                  Total number of transactions to simulate
+                                  between wallets
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                         <span className="text-sm font-medium">
                           {transactionCount}
                         </span>
@@ -316,7 +402,23 @@ const SimulationControls = ({
                   <CardContent>
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="dampingFactor">Damping Factor</Label>
+                        <div className="flex items-center gap-1">
+                          <Label htmlFor="dampingFactor">Damping Factor</Label>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="w-[200px] text-xs">
+                                  Controls how much risk is transferred between
+                                  connected wallets (higher values = more
+                                  transfer)
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                         <div className="flex items-center gap-2 mt-2">
                           <Slider
                             id="dampingFactor"
@@ -336,7 +438,22 @@ const SimulationControls = ({
                       </div>
 
                       <div>
-                        <Label htmlFor="iterations">Iterations</Label>
+                        <div className="flex items-center gap-1">
+                          <Label htmlFor="iterations">Iterations</Label>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="w-[200px] text-xs">
+                                  Number of times the algorithm runs to
+                                  propagate risk through the network
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                         <div className="flex items-center gap-2 mt-2">
                           <Slider
                             id="iterations"
@@ -365,9 +482,24 @@ const SimulationControls = ({
                   <CardContent>
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="riskThreshold">
-                          High Risk Threshold
-                        </Label>
+                        <div className="flex items-center gap-1">
+                          <Label htmlFor="riskThreshold">
+                            High Risk Threshold
+                          </Label>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="w-[200px] text-xs">
+                                  Score at which a wallet is considered high
+                                  risk (shown in red)
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                         <div className="flex items-center gap-2 mt-2">
                           <Slider
                             id="riskThreshold"
@@ -387,9 +519,24 @@ const SimulationControls = ({
                       </div>
 
                       <div>
-                        <Label htmlFor="transactionWeight">
-                          Transaction Weight
-                        </Label>
+                        <div className="flex items-center gap-1">
+                          <Label htmlFor="transactionWeight">
+                            Transaction Weight
+                          </Label>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="w-[200px] text-xs">
+                                  How much each transaction contributes to risk
+                                  propagation
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                         <div className="flex items-center gap-2 mt-2">
                           <Slider
                             id="transactionWeight"

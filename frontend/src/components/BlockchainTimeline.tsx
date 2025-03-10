@@ -207,7 +207,7 @@ const BlockchainTimeline = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[500px] pr-4">
+              <ScrollArea className="h-[500px] pr-4 custom-scrollbar">
                 <div className="space-y-4">
                   {filteredTransactions.map((transaction, index) => (
                     <div key={transaction.id} className="relative">
