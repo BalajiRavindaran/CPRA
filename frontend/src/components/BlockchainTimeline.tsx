@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -24,6 +24,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import { api } from "../utils/api";
 
 interface Transaction {
   id: string;
@@ -32,7 +33,7 @@ interface Transaction {
   toWallet: string;
   amount: number;
   riskScore: number;
-  status: "confirmed" | "pending" | "flagged";
+  status: "" | "flagged";
 }
 
 interface BlockchainTimelineProps {
@@ -40,103 +41,35 @@ interface BlockchainTimelineProps {
   onTransactionClick?: (transaction: Transaction) => void;
 }
 
-const BlockchainTimeline = ({
-  transactions = [
-    {
-      id: "tx-001",
-      timestamp: "2023-06-15 14:32:45",
-      fromWallet: "0x8f7d...e5a2",
-      toWallet: "0x3a9c...b7d1",
-      amount: 1.25,
-      riskScore: 78,
-      status: "confirmed" as const,
-    },
-    {
-      id: "tx-002",
-      timestamp: "2023-06-15 14:30:12",
-      fromWallet: "0x2b5e...c8f3",
-      toWallet: "0x8f7d...e5a2",
-      amount: 0.5,
-      riskScore: 45,
-      status: "confirmed" as const,
-    },
-    {
-      id: "tx-003",
-      timestamp: "2023-06-15 14:28:33",
-      fromWallet: "0x6d1a...f4e7",
-      toWallet: "0x2b5e...c8f3",
-      amount: 3.75,
-      riskScore: 22,
-      status: "confirmed" as const,
-    },
-    {
-      id: "tx-004",
-      timestamp: "2023-06-15 14:25:18",
-      fromWallet: "0x3a9c...b7d1",
-      toWallet: "0x7f2c...a9e5",
-      amount: 2.0,
-      riskScore: 85,
-      status: "flagged" as const,
-    },
-    {
-      id: "tx-005",
-      timestamp: "2023-06-15 14:22:51",
-      fromWallet: "0x9e4b...d2c6",
-      toWallet: "0x6d1a...f4e7",
-      amount: 0.75,
-      riskScore: 30,
-      status: "confirmed" as const,
-    },
-    {
-      id: "tx-006",
-      timestamp: "2023-06-15 14:20:07",
-      fromWallet: "0x7f2c...a9e5",
-      toWallet: "0x9e4b...d2c6",
-      amount: 1.5,
-      riskScore: 60,
-      status: "pending" as const,
-    },
-    {
-      id: "tx-007",
-      timestamp: "2023-06-15 14:18:22",
-      fromWallet: "0x1d8b...e3f5",
-      toWallet: "0x8f7d...e5a2",
-      amount: 5.0,
-      riskScore: 90,
-      status: "flagged" as const,
-    },
-    {
-      id: "tx-008",
-      timestamp: "2023-06-15 14:15:39",
-      fromWallet: "0x5c7a...b2d8",
-      toWallet: "0x1d8b...e3f5",
-      amount: 0.25,
-      riskScore: 15,
-      status: "confirmed" as const,
-    },
-    {
-      id: "tx-009",
-      timestamp: "2023-06-15 14:12:44",
-      fromWallet: "0x8f7d...e5a2",
-      toWallet: "0x5c7a...b2d8",
-      amount: 1.75,
-      riskScore: 55,
-      status: "confirmed" as const,
-    },
-    {
-      id: "tx-010",
-      timestamp: "2023-06-15 14:10:11",
-      fromWallet: "0x3a9c...b7d1",
-      toWallet: "0x8f7d...e5a2",
-      amount: 2.5,
-      riskScore: 70,
-      status: "pending" as const,
-    },
-  ],
-  onTransactionClick = () => {},
-}: BlockchainTimelineProps) => {
+const BlockchainTimeline = ({ onTransactionClick = () => {} }: BlockchainTimelineProps) => {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filter, setFilter] = useState<"all" | "high-risk" | "flagged">("all");
   const [expanded, setExpanded] = useState(true);
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const data = await api.getTransactions();
+
+        // Transform backend response to match BlockchainTimeline structure
+        const formattedTransactions: Transaction[] = data.map((tx) => ({
+          id: tx._id,
+          timestamp: new Date(tx.timestamp).toLocaleString(),
+          fromWallet: tx.sender_id,
+          toWallet: tx.receiver_id,
+          amount: tx.amount,
+          riskScore: (tx.risk * 100).toFixed(),
+          status: tx.flagged?"flagged":"",
+        }));
+
+        setTransactions(formattedTransactions);
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+      }
+    };
+
+    fetchTransactions();
+  }, []);
 
   const filteredTransactions = transactions.filter((tx) => {
     if (filter === "high-risk") return tx.riskScore >= 75;

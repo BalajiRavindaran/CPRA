@@ -31,7 +31,9 @@ exports.simulateTransactions = async (req, res) => {
             const newTransaction = await Transaction.create({
                 sender_id: sender.id,
                 receiver_id: receiver.id,
-                amount
+                amount,
+                risk: sender.risk_score > receiver.risk_score ? (sender.risk_score * 0.7) + (receiver.risk_score * 0.3) : (sender.risk_score * 0.3) + (receiver.risk_score * 0.7),
+                flagged: sender.flagged || receiver.flagged
             });
 
             // Update transaction history
@@ -66,6 +68,15 @@ exports.simulateTransactions = async (req, res) => {
         }
 
         res.status(200).json({ message: 'Simulation completed successfully' });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+exports.getAllTransactions = async (req, res) => {
+    try {
+        const transactions = await Transaction.find({});
+        res.status(200).json(transactions);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

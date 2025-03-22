@@ -5,27 +5,8 @@ import BlockchainTimeline from "./BlockchainTimeline";
 import WalletDetailPopup from "./WalletDetailPopup";
 import { useEffect } from "react";
 import { Info, ChevronLeft, X } from "lucide-react";
-
-interface SimulationParams {
-  walletCount: number;
-  riskyWalletCount: number;
-  transactionCount: number;
-}
-
-interface Wallet {
-  id: string;
-  position: [number, number, number];
-  riskScore: number;
-  color: string;
-}
-
-interface Transaction {
-  source: string;
-  target: string;
-  startTime: number;
-  endTime: number;
-  color: string;
-}
+import { Wallet, Transaction, SimulationParams } from '../utils/types';
+import { api } from '../utils/api';
 
 const Home = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -374,7 +355,7 @@ const Home = () => {
                       Historical changes to this wallet's risk score based on
                       transactions.
                     </p>
-                    <div className="border border-border rounded-lg overflow-hidden h-[300px]">
+                    <div className="border border-border rounded-lg overflow-hidden h-[200px]">
                       <div className="h-full overflow-y-auto custom-scrollbar p-1">
                         <table className="w-full">
                           <thead className="bg-muted/50">
@@ -557,7 +538,7 @@ const Home = () => {
                       Wallets that have direct transaction connections with this
                       wallet.
                     </p>
-                    <div className="border border-border rounded-lg overflow-hidden h-[400px]">
+                    <div className="border border-border rounded-lg overflow-hidden h-[200px]">
                       <div className="h-full overflow-y-auto custom-scrollbar p-3 space-y-3">
                         {connectedWalletIds().map((id) => {
                           const connectedWallet = wallets.find(

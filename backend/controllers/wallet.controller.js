@@ -2,6 +2,7 @@ const Wallet = require('../models/wallet.model');
 const Transaction = require('../models/transaction.model');
 const { v4: uuidv4 } = require('uuid');
 
+// Create wallets
 exports.createWallets = async (req, res) => {
     try {
         const { walletCount, riskyWalletCount, allowRiskDecay } = req.body;
@@ -33,6 +34,32 @@ exports.createWallets = async (req, res) => {
         }
 
         res.status(201).json({ message: 'Wallets created successfully' });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+// Get all wallets
+exports.getAllWallets = async (req, res) => {
+    try {
+        const wallets = await Wallet.find({});
+        res.status(200).json(wallets);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+// Get a specific wallet by ID
+exports.getWalletById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const wallet = await Wallet.findOne({ id });
+
+        if (!wallet) {
+            return res.status(404).json({ error: 'Wallet not found' });
+        }
+
+        res.status(200).json(wallet);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
