@@ -33,17 +33,9 @@ exports.createWallets = async (req, res) => {
             });
         }
 
-        res.status(201).json({ message: 'Wallets created successfully' });
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
-};
-
-// Get all wallets
-exports.getAllWallets = async (req, res) => {
-    try {
         const wallets = await Wallet.find({});
         res.status(200).json(wallets);
+        
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
