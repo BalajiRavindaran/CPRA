@@ -19,6 +19,7 @@ exports.simulateTransactions = async (req, res) => {
             const sender = wallets[Math.floor(Math.random() * totalWallets)];
             const receiver = wallets[Math.floor(Math.random() * totalWallets)];
 
+            // Skip if sender and receiver are the same or sender has no balance
             if (sender.id === receiver.id || sender.balance <= 0) continue;
 
             const amount = Math.min(sender.balance, Math.floor(Math.random() * 10) + 1);
@@ -32,11 +33,13 @@ exports.simulateTransactions = async (req, res) => {
                 sender_id: sender.id,
                 receiver_id: receiver.id,
                 amount,
-                risk: sender.risk_score > receiver.risk_score ? (sender.risk_score * 0.7) + (receiver.risk_score * 0.3) : (sender.risk_score * 0.3) + (receiver.risk_score * 0.7),
+                risk: sender.risk_score > receiver.risk_score
+                    ? (sender.risk_score * 0.7) + (receiver.risk_score * 0.3)
+                    : (sender.risk_score * 0.3) + (receiver.risk_score * 0.7),
                 flagged: sender.flagged || receiver.flagged
             });
 
-            // Update transaction history
+            // Update transaction history for sender and receiver
             sender.transaction_history.push(newTransaction._id);
             receiver.transaction_history.push(newTransaction._id);
 
@@ -52,19 +55,26 @@ exports.simulateTransactions = async (req, res) => {
             await receiver.save();
 
             // Recalculate risk scores for affected wallets
-            const walletsToUpdate = new Set([sender.id, receiver.id]);
-            sender.connected_wallets.forEach(id => walletsToUpdate.add(id));
-            receiver.connected_wallets.forEach(id => walletsToUpdate.add(id));
+            const directlyAffectedWallets = new Set([sender.id, receiver.id]);
+            const indirectlyAffectedWallets = new Set();
 
+            // Add connected wallets to indirectly affected wallets
+            sender.connected_wallets.forEach(id => indirectlyAffectedWallets.add(id));
+            receiver.connected_wallets.forEach(id => indirectlyAffectedWallets.add(id));
+
+            // Remove directly affected wallets from the indirectly affected set
+            directlyAffectedWallets.forEach(id => indirectlyAffectedWallets.delete(id));
+
+            // Update risk scores for directly and indirectly affected wallets
             await calculateWalletRank({
                 dampingFactor,
                 iterations,
                 riskThreshold,
                 transactionWeight,
-                walletsToUpdate: Array.from(walletsToUpdate)
+                directlyAffectedWallets: Array.from(directlyAffectedWallets),
+                indirectlyAffectedWallets: Array.from(indirectlyAffectedWallets),
+                transactionId: newTransaction._id // Pass the transaction ID
             });
-
-            await new Promise(resolve => setTimeout(resolve, 50)); // Reduced delay
         }
 
         res.status(200).json({ message: 'Simulation completed successfully' });

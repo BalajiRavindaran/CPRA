@@ -27,7 +27,7 @@ exports.createWallets = async (req, res) => {
             await Wallet.create({
                 id: uuidv4(),
                 balance: 100,
-                risk_score: 0.7 + Math.random() * 0.3, // High risk (0.7–1.0)
+                risk_score: 0.75 + Math.random() * 0.25, // High risk (0.7–1.0)
                 flagged: true,
                 allowRiskDecay
             });
@@ -36,6 +36,17 @@ exports.createWallets = async (req, res) => {
         const wallets = await Wallet.find({});
         res.status(200).json(wallets);
         
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+// Get all wallets
+exports.getAllWallets = async (req, res) => {
+    try {
+        const wallets = await Wallet.find({});
+        res.status(200).json(wallets);
+
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

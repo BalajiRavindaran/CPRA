@@ -20,16 +20,11 @@ import {
 } from "./ui/tooltip";
 import WalletDetailPopup from "./WalletDetailPopup";
 import { motion, AnimatePresence } from "framer-motion";
+import { SimulationParams } from '../utils/types';
 
 interface SimulationControlsProps {
   onSimulate?: (params: SimulationParams) => void;
   isLoading?: boolean;
-}
-
-interface SimulationParams {
-  walletCount: number;
-  riskyWalletCount: number;
-  transactionCount: number;
 }
 
 const SimulationControls = ({
@@ -37,11 +32,11 @@ const SimulationControls = ({
   isLoading = false,
 }: SimulationControlsProps) => {
   // Form state
-  const [walletCount, setWalletCount] = useState(100);
-  const [riskyWalletCount, setRiskyWalletCount] = useState(10);
-  const [transactionCount, setTransactionCount] = useState(500);
+  const [walletCount, setWalletCount] = useState(10);
+  const [riskyWalletCount, setRiskyWalletCount] = useState(2);
+  const [transactionCount, setTransactionCount] = useState(5);
   const [dampingFactor, setDampingFactor] = useState(0.85);
-  const [iterations, setIterations] = useState(20);
+  const [iterations, setIterations] = useState(10);
   const [riskThreshold, setRiskThreshold] = useState(75);
   const [allowRiskDecay, setAllowRiskDecay] = useState(false);
   const [transactionWeight, setTransactionWeight] = useState(0.5);
@@ -57,6 +52,7 @@ const SimulationControls = ({
       walletCount,
       riskyWalletCount,
       transactionCount: 0, // No transactions yet
+      allowRiskDecay, // Add allowRiskDecay parameter
     });
     setWalletsGenerated(true);
     setCurrentStep(2);
@@ -68,6 +64,11 @@ const SimulationControls = ({
       walletCount,
       riskyWalletCount,
       transactionCount,
+      allowRiskDecay,
+      dampingFactor,
+      iterations,
+      riskThreshold,
+      transactionWeight
     });
   };
 
@@ -183,9 +184,9 @@ const SimulationControls = ({
                         </div>
                         <Slider
                           id="walletCount"
-                          min={10}
-                          max={500}
-                          step={10}
+                          min={1}
+                          max={20}
+                          step={1}
                           value={[walletCount]}
                           onValueChange={(value) => setWalletCount(value[0])}
                           className="mb-2"
@@ -197,8 +198,8 @@ const SimulationControls = ({
                           onChange={(e) =>
                             setWalletCount(Number(e.target.value))
                           }
-                          min={10}
-                          max={500}
+                          min={1}
+                          max={20}
                           className="mt-2"
                         />
                       </div>
@@ -230,7 +231,7 @@ const SimulationControls = ({
                         <Slider
                           id="riskyWalletCount"
                           min={0}
-                          max={Math.min(100, walletCount)}
+                          max={Math.min(20, walletCount)}
                           step={1}
                           value={[riskyWalletCount]}
                           onValueChange={(value) =>
@@ -246,7 +247,7 @@ const SimulationControls = ({
                             setRiskyWalletCount(Number(e.target.value))
                           }
                           min={0}
-                          max={Math.min(100, walletCount)}
+                          max={Math.min(20, walletCount)}
                           className="mt-2"
                         />
                       </div>
@@ -273,8 +274,7 @@ const SimulationControls = ({
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p className="w-[200px] text-xs">
-                                  When enabled, risk scores can decrease over
-                                  time if no new risky transactions occur
+                                  When enabled, risk scores for high risk wallets will decrease over time by transacting with low risk wallets
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -371,9 +371,9 @@ const SimulationControls = ({
                       </div>
                       <Slider
                         id="transactionCount"
-                        min={50}
-                        max={2000}
-                        step={50}
+                        min={1}
+                        max={20}
+                        step={1}
                         value={[transactionCount]}
                         onValueChange={(value) => setTransactionCount(value[0])}
                         className="mb-2"
@@ -385,8 +385,8 @@ const SimulationControls = ({
                         onChange={(e) =>
                           setTransactionCount(Number(e.target.value))
                         }
-                        min={50}
-                        max={2000}
+                        min={1}
+                        max={20}
                         className="mt-2"
                       />
                     </div>
@@ -411,9 +411,7 @@ const SimulationControls = ({
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p className="w-[200px] text-xs">
-                                  Controls how much risk is transferred between
-                                  connected wallets (higher values = more
-                                  transfer)
+                                  Controls the influence of incoming/outgoing risk scores versus a uniform distribution, ensuring stability in risk score calculations
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -447,8 +445,7 @@ const SimulationControls = ({
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p className="w-[200px] text-xs">
-                                  Number of times the algorithm runs to
-                                  propagate risk through the network
+                                  Determines how many times the algorithm recalculates risk scores to achieve convergence or stability
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -458,8 +455,8 @@ const SimulationControls = ({
                           <Slider
                             id="iterations"
                             min={5}
-                            max={50}
-                            step={5}
+                            max={20}
+                            step={1}
                             value={[iterations]}
                             onValueChange={(value) => setIterations(value[0])}
                             className="flex-1"
@@ -493,8 +490,7 @@ const SimulationControls = ({
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p className="w-[200px] text-xs">
-                                  Score at which a wallet is considered high
-                                  risk (shown in red)
+                                  Defines the minimum risk score (as a percentage) required to flag a wallet as high-risk
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -530,8 +526,7 @@ const SimulationControls = ({
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p className="w-[200px] text-xs">
-                                  How much each transaction contributes to risk
-                                  propagation
+                                  Adjusts the impact of transaction amounts on risk score propagation between wallets
                                 </p>
                               </TooltipContent>
                             </Tooltip>

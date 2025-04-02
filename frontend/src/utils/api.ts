@@ -5,20 +5,19 @@ import { SimulationParams } from './types';
 const BASE_URL = 'http://localhost:3000';
 
 export const api = {
-  // Wallets API
-  getWallets: async () => {
-    const response = await fetch(`${BASE_URL}/wallets`);
-    if (!response.ok) throw new Error('Failed to fetch wallets');
-    return response.json();
-  },
-
-  createWallets: async (params: { walletCount: number; riskyWalletCount: number }) => {
-    const response = await fetch(`${BASE_URL}/create-wallets`, {
+  createWallets: async (params: { walletCount: number; riskyWalletCount: number; allowRiskDecay?: boolean }) => {
+    const response = await fetch(`${BASE_URL}/wallets/create-wallets`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
     });
     if (!response.ok) throw new Error('Failed to create wallets');
+    return response.json();
+  },
+
+  getAllWallets: async () => {
+    const response = await fetch(`${BASE_URL}/wallets`);
+    if (!response.ok) throw new Error('Failed to fetch wallets');
     return response.json();
   },
 
@@ -28,7 +27,7 @@ export const api = {
     return response.json();
   },
 
-  // Transactions API
+  // Transactions APIs
   getTransactions: async () => {
     const response = await fetch(`${BASE_URL}/transactions`);
     if (!response.ok) throw new Error('Failed to fetch transactions');
@@ -36,7 +35,7 @@ export const api = {
   },
 
   simulateTransactions: async (params: SimulationParams) => {
-    const response = await fetch(`${BASE_URL}/simulate-transactions`, {
+    const response = await fetch(`${BASE_URL}/transactions/simulate-transactions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),
