@@ -12,7 +12,12 @@ exports.simulateTransactions = async (req, res) => {
             transactionWeight
         } = req.body;
 
-        const wallets = await Wallet.find({});
+        const userId = req.header('x-user-id');
+        if (!userId) {
+            return res.status(400).json({ error: 'x-user-id header is required' });
+        }
+
+        const wallets = await Wallet.find({ user_id: userId }); // Filter wallets by user_id
         const totalWallets = wallets.length;
 
         for (let i = 0; i < transactionCount; i++) {
@@ -30,6 +35,7 @@ exports.simulateTransactions = async (req, res) => {
 
             // Create transaction
             const newTransaction = await Transaction.create({
+                user_id: userId, // Associate transaction with user_id
                 sender_id: sender.id,
                 receiver_id: receiver.id,
                 amount,
@@ -67,6 +73,7 @@ exports.simulateTransactions = async (req, res) => {
 
             // Update risk scores for directly and indirectly affected wallets
             await calculateWalletRank({
+                userId, // Pass userId to scope the operation
                 dampingFactor,
                 iterations,
                 riskThreshold,
@@ -85,7 +92,12 @@ exports.simulateTransactions = async (req, res) => {
 
 exports.getAllTransactions = async (req, res) => {
     try {
-        const transactions = await Transaction.find({});
+        const userId = req.header('x-user-id');
+        if (!userId) {
+            return res.status(400).json({ error: 'x-user-id header is required' });
+        }
+
+        const transactions = await Transaction.find({ user_id: userId }); // Filter transactions by user_id
         res.status(200).json(transactions);
     } catch (error) {
         res.status(400).json({ error: error.message });

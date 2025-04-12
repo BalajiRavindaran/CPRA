@@ -135,22 +135,17 @@ async function calculateWalletRank({
     wallet.risk_score = newRiskScore;
     wallet.risk_level = newRiskScore >= highRiskThreshold ? "high" : "low";
 
-    // Add transaction reference to risk score history AFTER updating the risk score
-    if (directlyAffectedWallets.includes(wallet.id)) {
+    // Add transaction reference to risk score history
+    if (
+      directlyAffectedWallets.includes(wallet.id) ||
+      indirectlyAffectedWallets.includes(wallet.id)
+    ) {
       wallet.risk_score_history.push({
         timestamp: new Date(),
         previous_risk_score: previousRiskScore,
         risk_score: wallet.risk_score, // Use the final risk score
         change,
-        transaction_id: transactionId, // Link the transaction ID for directly affected wallets
-      });
-    } else if (indirectlyAffectedWallets.includes(wallet.id)) {
-      wallet.risk_score_history.push({
-        timestamp: new Date(),
-        previous_risk_score: previousRiskScore,
-        risk_score: wallet.risk_score, // Use the final risk score
-        change,
-        transaction_id: transactionId, // Include the triggering transaction ID for indirectly affected wallets
+        transaction_id: transactionId, // Link the transaction ID
       });
     }
 
